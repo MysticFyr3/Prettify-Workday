@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "esbuild src/content.js --bundle --outfile=dist/content.js",
-    "watch": "esbuild src/content.js --bundle --outfile=dist/content.js --watch"
+    "build": "esbuild src/content.js --bundle --outfile=dist/content.js --format=iife",
+    "watch": "esbuild src/content.js --bundle --outfile=dist/content.js --format=iife --watch"
   },
   "repository": {
     "type": "git",
