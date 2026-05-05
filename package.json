@@ -1,0 +1,25 @@
+{
+  "name": "prettify-workday",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "esbuild src/content.js --bundle --outfile=dist/content.js",
+    "watch": "esbuild src/content.js --bundle --outfile=dist/content.js --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MysticFyr3/Prettify-Workday.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/MysticFyr3/Prettify-Workday/issues"
+  },
+  "homepage": "https://github.com/MysticFyr3/Prettify-Workday#readme",
+  "devDependencies": {
+    "esbuild": "^0.28.0"
+  }
+}
