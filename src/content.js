@@ -1,12 +1,11 @@
 console.log("INFO: Prettify Workday loaded successfully.");
 
-// import components here as we build them
-import './enhancers/table.js';
+// import registry FIRST
+import { startObserver } from './core/registry.js';
 
-// content.js stays thin — components self-register when imported
-const fonts = new Set();
-document.querySelectorAll('*').forEach(el => {
-    const font = getComputedStyle(el).fontFamily;
-    if (font) fonts.add(font);
-});
-console.log([...fonts]);
+// import enhancers (they self-register)
+import './enhancers/table.js';
+import './enhancers/tableCurrentCourses.js';
+
+// start everything
+startObserver();

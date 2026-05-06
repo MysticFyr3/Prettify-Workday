@@ -28,32 +28,48 @@
     mod
   ));
 
-  // src/utils.js
-  function onElementFound(selector, callback) {
-    const observer = new MutationObserver(() => {
-      document.querySelectorAll(selector).forEach((el) => {
-        if (el.dataset.wdEnhanced) return;
-        el.dataset.wdEnhanced = "true";
-        callback(el);
-      });
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-    document.querySelectorAll(selector).forEach((el) => {
-      if (el.dataset.wdEnhanced) return;
-      el.dataset.wdEnhanced = "true";
-      callback(el);
-    });
-    return () => observer.disconnect();
+  // src/core/registry.js
+  function registerEnhancer({ selector, handler, key }) {
+    enhancers.push({ selector, handler, key });
   }
-  var init_utils = __esm({
-    "src/utils.js"() {
+  function processNode(node) {
+    if (node.nodeType !== 1) return;
+    for (const { selector, handler, key } of enhancers) {
+      const attr = `wdEnhanced_${key}`;
+      if (node.matches?.(selector) && !node.dataset[attr]) {
+        node.dataset[attr] = "true";
+        handler(node);
+      }
+      node.querySelectorAll?.(selector).forEach((el) => {
+        if (el.dataset[attr]) return;
+        el.dataset[attr] = "true";
+        handler(el);
+      });
+    }
+  }
+  function startObserver() {
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        mutation.addedNodes.forEach(processNode);
+      }
+    });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+    processNode(document.body);
+  }
+  var enhancers;
+  var init_registry = __esm({
+    "src/core/registry.js"() {
+      enhancers = [];
     }
   });
 
   // src/enhancers/table.js
   var require_table = __commonJS({
     "src/enhancers/table.js"() {
-      init_utils();
+      init_registry();
       var styles = `
     .wd-table-wrapper {
         margin-bottom: 16px;
@@ -99,10 +115,6 @@
         vertical-align: middle !important;
     }
 
-    .wd-table-wrapper [data-automation-id="row"] td:first-child {
-        border-left: none !important;
-    }
-
     .wd-table-wrapper [data-automation-id="row"]:nth-child(even) td {
         background-color: #f6f8fa !important;
     }
@@ -111,7 +123,6 @@
         background-color: #eaf0fb !important;
     }
 
-    /* kill Workday's persistent focus highlight on clicked cells */
     .wd-table-wrapper [data-automation-id="cell"]:focus,
     .wd-table-wrapper [data-automation-id="cell"]:focus-within,
     .wd-table-wrapper [data-automation-id="cell"][tabindex]:focus {
@@ -160,6 +171,7 @@
         });
       }
       function enhanceTable(wrapper) {
+        injectGlobalStyles();
         const caption = wrapper.querySelector("caption");
         const title = caption ? caption.textContent.trim() : null;
         const container = document.createElement("div");
@@ -180,22 +192,75 @@
         }
         enhanceMeetingPatterns(wrapper);
       }
-      injectGlobalStyles();
-      onElementFound('[data-automation-id="tableWrapper"]', enhanceTable);
+      registerEnhancer({
+        selector: '[data-automation-id="tableWrapper"]',
+        handler: enhanceTable,
+        key: "table"
+      });
+    }
+  });
+
+  // src/utils.js
+  function onElementFound(selector, callback) {
+    const observer = new MutationObserver(() => {
+      document.querySelectorAll(selector).forEach((el) => {
+        if (el.dataset.wdEnhanced) return;
+        el.dataset.wdEnhanced = "true";
+        callback(el);
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    document.querySelectorAll(selector).forEach((el) => {
+      if (el.dataset.wdEnhanced) return;
+      el.dataset.wdEnhanced = "true";
+      callback(el);
+    });
+    return () => observer.disconnect();
+  }
+  var init_utils = __esm({
+    "src/utils.js"() {
+    }
+  });
+
+  // src/enhancers/tableCurrentCourses.js
+  var require_tableCurrentCourses = __commonJS({
+    "src/enhancers/tableCurrentCourses.js"() {
+      init_utils();
+      function removeCourseListingColumn(wrapper) {
+        const headerRow = wrapper.querySelector('[data-automation-id="tableHead"] tr');
+        if (!headerRow) return;
+        const headers = Array.from(headerRow.querySelectorAll("th"));
+        const targetIndex = headers.findIndex(
+          (th) => th.textContent.trim().toLowerCase().includes("course listing")
+        );
+        if (targetIndex === -1) return;
+        headers[targetIndex].remove();
+        wrapper.querySelectorAll('[data-automation-id="row"]').forEach((row) => {
+          const cells = row.querySelectorAll("td");
+          if (cells[targetIndex]) {
+            cells[targetIndex].remove();
+          }
+        });
+      }
+      function isTargetTable(wrapper) {
+        const text = wrapper.textContent.toLowerCase();
+        return text.includes("course listing");
+      }
+      onElementFound('[data-automation-id="tableWrapper"]', (wrapper) => {
+        if (!isTargetTable(wrapper)) return;
+        removeCourseListingColumn(wrapper);
+      });
     }
   });
 
   // src/content.js
   var require_content = __commonJS({
     "src/content.js"() {
+      init_registry();
       var import_table = __toESM(require_table());
+      var import_tableCurrentCourses = __toESM(require_tableCurrentCourses());
       console.log("INFO: Prettify Workday loaded successfully.");
-      var fonts = /* @__PURE__ */ new Set();
-      document.querySelectorAll("*").forEach((el) => {
-        const font = getComputedStyle(el).fontFamily;
-        if (font) fonts.add(font);
-      });
-      console.log([...fonts]);
+      startObserver();
     }
   });
   require_content();

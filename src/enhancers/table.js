@@ -1,4 +1,4 @@
-import { onElementFound } from '../utils.js';
+import { registerEnhancer } from '../core/registry.js';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -47,10 +47,6 @@ const styles = `
         vertical-align: middle !important;
     }
 
-    .wd-table-wrapper [data-automation-id="row"] td:first-child {
-        border-left: none !important;
-    }
-
     .wd-table-wrapper [data-automation-id="row"]:nth-child(even) td {
         background-color: #f6f8fa !important;
     }
@@ -59,7 +55,6 @@ const styles = `
         background-color: #eaf0fb !important;
     }
 
-    /* kill Workday's persistent focus highlight on clicked cells */
     .wd-table-wrapper [data-automation-id="cell"]:focus,
     .wd-table-wrapper [data-automation-id="cell"]:focus-within,
     .wd-table-wrapper [data-automation-id="cell"][tabindex]:focus {
@@ -92,47 +87,51 @@ function injectGlobalStyles() {
 
 // ─── Meeting pattern parser ────────────────────────────────────────────────────
 
-// Input:  "2026-07-08 - 2026-08-12 | Wed Fri | 10:00 - 11:00 | UBCV | Institute... | Floor: 3 | Room: X350"
-// Output: "Wed Fri | 10:00 - 11:00 | ICCS X350"
 function parseMeetingPattern(text) {
     const parts = text.split('|').map(p => p.trim());
     if (parts.length < 4) return text;
 
-    const days     = parts[1];
-    const time     = parts[2];
+    const days = parts[1];
+    const time = parts[2];
 
-    const buildingPart  = parts[4] || '';
+    const buildingPart = parts[4] || '';
     const buildingMatch = buildingPart.match(/\(([^)]+)\)/);
-    const building      = buildingMatch ? buildingMatch[1] : null;
+    const building = buildingMatch ? buildingMatch[1] : null;
 
     const roomPart = parts[parts.length - 1];
-    const room     = roomPart.startsWith('Room:') ? roomPart.replace('Room:', '').trim() : null;
+    const room = roomPart.startsWith('Room:')
+        ? roomPart.replace('Room:', '').trim()
+        : null;
 
     const location = [building, room].filter(Boolean).join(' ');
-    return location ? `${days} │ ${time} │ ${location}` : `${days} │ ${time}`;
+    return location
+        ? `${days} │ ${time} │ ${location}`
+        : `${days} │ ${time}`;
 }
 
 function enhanceMeetingPatterns(wrapper) {
     wrapper.querySelectorAll('[data-automation-id="promptOption"]').forEach(el => {
         const text = el.getAttribute('title') || el.textContent.trim();
         if (!/^\d{4}-\d{2}-\d{2} - \d{4}-\d{2}-\d{2}/.test(text)) return;
+
         el.textContent = parseMeetingPattern(text);
-        el.setAttribute('title', text); // preserve full string as tooltip
+        el.setAttribute('title', text);
     });
 }
 
 // ─── Table enhancer ───────────────────────────────────────────────────────────
 
 function enhanceTable(wrapper) {
+    injectGlobalStyles();
+
     const caption = wrapper.querySelector('caption');
-    const title   = caption ? caption.textContent.trim() : null;
+    const title = caption ? caption.textContent.trim() : null;
 
     const container = document.createElement('div');
     container.className = 'wd-table-wrapper';
 
-    // wrap the whole rivaWidget (toolbar + table) if available,
-    // otherwise fall back to wrapping just the tableWrapper
     const rivaWidget = wrapper.closest('[data-automation-id="rivaWidget"]');
+
     if (rivaWidget) {
         rivaWidget.parentElement.insertBefore(container, rivaWidget);
         container.appendChild(rivaWidget);
@@ -151,7 +150,10 @@ function enhanceTable(wrapper) {
     enhanceMeetingPatterns(wrapper);
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
+// ─── Registration ─────────────────────────────────────────────────────────────
 
-injectGlobalStyles();
-onElementFound('[data-automation-id="tableWrapper"]', enhanceTable);
+registerEnhancer({
+    selector: '[data-automation-id="tableWrapper"]',
+    handler: enhanceTable,
+    key: 'table'
+});
