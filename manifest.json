@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Workday Enhancer",
+  "name": "Prettify Workday",
   "version": "1.0",
-  "description": "Enhances UBC Workday readability",
+  "description": "Enhance UBC Workday readability",
   "content_scripts": [{
     "matches": ["*://*.myworkday.com/*"],
     "js": ["dist/content.js"]

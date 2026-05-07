@@ -1,3 +1,4 @@
+// src/enhancers/table.js
 import { registerEnhancer } from '../core/registry.js';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -45,6 +46,7 @@ const styles = `
         padding: 10px 14px !important;
         border: none !important;
         vertical-align: middle !important;
+        background-color: #fff !important;
     }
 
     .wd-table-wrapper [data-automation-id="row"]:nth-child(even) td {
@@ -55,11 +57,15 @@ const styles = `
         background-color: #eaf0fb !important;
     }
 
-    .wd-table-wrapper [data-automation-id="cell"]:focus,
-    .wd-table-wrapper [data-automation-id="cell"]:focus-within,
-    .wd-table-wrapper [data-automation-id="cell"][tabindex]:focus {
-        background-color: inherit !important;
+    .wd-table-wrapper [data-automation-id="row"]:focus-within td {
+        background-color: #eaf0fb !important;
         outline: none !important;
+    }
+
+    .wd-table-wrapper [data-automation-id="cell"]:focus,
+    .wd-table-wrapper [data-automation-id="cell"]:focus-visible {
+        outline: none !important;
+        background-color: inherit !important;
     }
 
     .wd-table-wrapper [data-automation-id="tableFooter"] {

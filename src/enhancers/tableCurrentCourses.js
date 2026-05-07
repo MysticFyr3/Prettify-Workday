@@ -1,37 +1,68 @@
-import { onElementFound } from '../utils.js';
+// src/enhancers/tableCurrentCourses.js
+import { registerEnhancer } from '../core/registry.js';
 
-function removeCourseListingColumn(wrapper) {
+function getHeaderText(th) {
+    const span = th.querySelector('button span:first-child');
+    return span?.textContent.trim().toLowerCase() ?? th.textContent.trim().toLowerCase();
+}
+
+function isTargetTable(wrapper) {
+    const headers = wrapper.querySelectorAll('[data-automation-id="tableHead"] th');
+    return Array.from(headers).some(th => getHeaderText(th).includes('course listing'));
+}
+
+function removeColumns(wrapper) {
     const headerRow = wrapper.querySelector('[data-automation-id="tableHead"] tr');
     if (!headerRow) return;
 
     const headers = Array.from(headerRow.querySelectorAll('th'));
-
-    // find the index of "Course Listing"
-    const targetIndex = headers.findIndex(th =>
-        th.textContent.trim().toLowerCase().includes('course listing')
-    );
-
+    const targetIndex = headers.findIndex(th => getHeaderText(th).includes('course listing'));
     if (targetIndex === -1) return;
 
-    // remove header cell
     headers[targetIndex].remove();
-
-    // remove corresponding cells in each row
     wrapper.querySelectorAll('[data-automation-id="row"]').forEach(row => {
         const cells = row.querySelectorAll('td');
-        if (cells[targetIndex]) {
-            cells[targetIndex].remove();
-        }
+        if (cells[targetIndex]) cells[targetIndex].remove();
     });
 }
 
-// Only run on relevant tables
-function isTargetTable(wrapper) {
-    const text = wrapper.textContent.toLowerCase();
-    return text.includes('course listing');
+function combineDeliveryColumns(wrapper) {
+    const headerRow = wrapper.querySelector('[data-automation-id="tableHead"] tr');
+    if (!headerRow) return;
+
+    const headers = Array.from(headerRow.querySelectorAll('th'));
+    
+    const formatIndex = headers.findIndex(th => getHeaderText(th).includes('instructional format'));
+    const modeIndex = headers.findIndex(th => getHeaderText(th).includes('delivery mode'));
+    
+    if (formatIndex === -1 || modeIndex === -1) return;
+
+    // Remove the Delivery Mode header
+    headers[modeIndex].remove();
+
+    // Combine cell values in each row
+    wrapper.querySelectorAll('[data-automation-id="row"]').forEach(row => {
+        const cells = row.querySelectorAll('td');
+        const formatCell = cells[formatIndex];
+        const modeCell = cells[modeIndex];
+        if (!formatCell || !modeCell) return;
+
+        const format = formatCell.textContent.trim();
+        const mode = modeCell.textContent.trim().replace(/ Learning$/i, '');
+        
+        formatCell.textContent = `${format} (${mode})`;
+        modeCell.remove();
+    });
 }
 
-onElementFound('[data-automation-id="tableWrapper"]', (wrapper) => {
+function enhanceCurrentCourses(wrapper) {
     if (!isTargetTable(wrapper)) return;
-    removeCourseListingColumn(wrapper);
+    removeColumns(wrapper);
+    combineDeliveryColumns(wrapper);
+}
+
+registerEnhancer({
+    selector: '[data-automation-id="tableWrapper"]',
+    handler: enhanceCurrentCourses,
+    key: 'currentCourses'
 });
