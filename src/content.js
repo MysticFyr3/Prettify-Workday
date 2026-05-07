@@ -6,7 +6,8 @@ import { startObserver } from './core/registry.js';
 // import enhancers (they self-register)
 import './enhancers/table.js';
 import './enhancers/tableCurrentCourses.js';
-// import './enhancers/fieldSet.js';
+import './enhancers/fieldSet.js';
+import './enhancers/pageFields.js';
 // import './enhancers/tableCourseDetails.js';
 
 // start everything

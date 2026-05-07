@@ -1,4 +1,3 @@
-// src/enhancers/table.js
 import { registerEnhancer } from '../core/registry.js';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -79,6 +78,51 @@ const styles = `
     .wd-table-wrapper caption {
         display: none !important;
     }
+
+    /* Pill/moniker values inside table cells */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="selectedItemList"] {
+        list-style: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="menuItem"] {
+        background: #e8f0fe !important;
+        border: 1px solid #c5d5f5 !important;
+        border-radius: 4px !important;
+        padding: 2px 8px !important;
+        font-size: 13px !important;
+    }
+
+    /* Hide related-actions buttons inside table cells */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="relatedIconContainer"] {
+        display: none !important;
+    }
+
+    // /* Date cells */
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date {
+    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+    //     font-weight: 500 !important;
+    // }
+
+    // /* Numeric cells */
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number {
+    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+    //     font-weight: 500 !important;
+    // }
+
+    // /* Persist styles through row selection focus */
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date:focus,
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date:focus-within,
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number:focus,
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number:focus-within {
+    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+    //     font-size: 12px !important;
+    //     font-weight: 500 !important;
+    // }
 `;
 
 // ─── Style injection ───────────────────────────────────────────────────────────
@@ -125,6 +169,34 @@ function enhanceMeetingPatterns(wrapper) {
     });
 }
 
+// ─── Cell value classifier ────────────────────────────────────────────────────
+
+const DATE = /\d{4}-\d{2}-\d{2}/;
+const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
+
+function classifyCell(cell) {
+    cell.classList.remove('wd-cell-date', 'wd-cell-number');
+
+    if (cell.querySelector([
+        '[data-automation-id="selectedItemList"]',
+        '[data-automation-id="panel"]',
+        '[data-automation-id="dropDownCommandButton"]'
+    ].join(', '))) return;
+
+    const text = cell.textContent.trim();
+    if (!text) return;
+
+    if (DATE.test(text)) {
+        cell.classList.add('wd-cell-date');
+    } else if (NUMBER.test(text)) {
+        cell.classList.add('wd-cell-number');
+    }
+}
+
+function classifyTableCells(wrapper) {
+    wrapper.querySelectorAll('[data-automation-id="cell"]').forEach(classifyCell);
+}
+
 // ─── Table enhancer ───────────────────────────────────────────────────────────
 
 function enhanceTable(wrapper) {
@@ -154,6 +226,7 @@ function enhanceTable(wrapper) {
     }
 
     enhanceMeetingPatterns(wrapper);
+    classifyTableCells(wrapper);
 }
 
 // ─── Registration ─────────────────────────────────────────────────────────────

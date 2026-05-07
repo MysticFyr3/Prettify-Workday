@@ -146,6 +146,51 @@
     .wd-table-wrapper caption {
         display: none !important;
     }
+
+    /* Pill/moniker values inside table cells */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="selectedItemList"] {
+        list-style: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="menuItem"] {
+        background: #e8f0fe !important;
+        border: 1px solid #c5d5f5 !important;
+        border-radius: 4px !important;
+        padding: 2px 8px !important;
+        font-size: 13px !important;
+    }
+
+    /* Hide related-actions buttons inside table cells */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="relatedIconContainer"] {
+        display: none !important;
+    }
+
+    // /* Date cells */
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date {
+    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+    //     font-weight: 500 !important;
+    // }
+
+    // /* Numeric cells */
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number {
+    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+    //     font-weight: 500 !important;
+    // }
+
+    // /* Persist styles through row selection focus */
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date:focus,
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date:focus-within,
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number:focus,
+    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number:focus-within {
+    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+    //     font-size: 12px !important;
+    //     font-weight: 500 !important;
+    // }
 `;
       function injectGlobalStyles() {
         if (document.getElementById("wd-enhancer-styles")) return;
@@ -175,6 +220,26 @@
           el.setAttribute("title", text);
         });
       }
+      var DATE = /\d{4}-\d{2}-\d{2}/;
+      var NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
+      function classifyCell(cell) {
+        cell.classList.remove("wd-cell-date", "wd-cell-number");
+        if (cell.querySelector([
+          '[data-automation-id="selectedItemList"]',
+          '[data-automation-id="panel"]',
+          '[data-automation-id="dropDownCommandButton"]'
+        ].join(", "))) return;
+        const text = cell.textContent.trim();
+        if (!text) return;
+        if (DATE.test(text)) {
+          cell.classList.add("wd-cell-date");
+        } else if (NUMBER.test(text)) {
+          cell.classList.add("wd-cell-number");
+        }
+      }
+      function classifyTableCells(wrapper) {
+        wrapper.querySelectorAll('[data-automation-id="cell"]').forEach(classifyCell);
+      }
       function enhanceTable(wrapper) {
         injectGlobalStyles();
         const caption = wrapper.querySelector("caption");
@@ -196,6 +261,7 @@
           container.insertBefore(titleBar, container.firstChild);
         }
         enhanceMeetingPatterns(wrapper);
+        classifyTableCells(wrapper);
       }
       registerEnhancer({
         selector: '[data-automation-id="tableWrapper"]',
@@ -272,87 +338,129 @@
         font-size: 14px;
         border: 1px solid #d0d7de;
         border-radius: 8px;
-        overflow: hidden;
     }
 
     .wd-fieldset-title {
         font-size: 15px;
         font-weight: bold;
         color: #fff;
-        background-color: #1f3a5f;
         padding: 10px 14px;
+        border-radius: 8px 8px 0 0;
         display: flex;
         align-items: center;
-        justify-content: space-between;
+        gap: 8px;
+        cursor: pointer;
+        user-select: none;
     }
 
-    /* Hide Workday's own legend heading \u2014 we replace it */
-    .wd-fieldset-card [data-automation-id="fieldSetLegendHeading"] {
+    .wd-fieldset-title .wd-chevron {
+        transition: transform 0.2s ease;
+        flex-shrink: 0;
+        opacity: 0.8;
+    }
+
+    .wd-fieldset-title.wd-collapsed .wd-chevron {
+        transform: rotate(-90deg);
+    }
+
+    /* Depth-based title colours */
+    .wd-fieldset-card[data-wd-depth="0"] .wd-fieldset-title { background-color: #1f3a5f; }
+    .wd-fieldset-card[data-wd-depth="1"] .wd-fieldset-title { background-color: #2c5282; }
+    .wd-fieldset-card[data-wd-depth="2"] .wd-fieldset-title { background-color: #2b6cb0; }
+    .wd-fieldset-card[data-wd-depth="3"] .wd-fieldset-title { background-color: #3182ce; }
+
+    /* Depth-based indentation */
+    .wd-fieldset-card[data-wd-depth="1"] { margin-left: 12px; }
+    .wd-fieldset-card[data-wd-depth="2"] { margin-left: 24px; }
+    .wd-fieldset-card[data-wd-depth="3"] { margin-left: 36px; }
+
+    /* Hide Workday's original header row */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] > .WG-N {
         display: none !important;
     }
 
-    /* Hide the expand/collapse chevron button \u2014 card is always open */
-    .wd-fieldset-card .WF-N[role="button"] {
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="fieldSetLegendHeading"] {
         display: none !important;
     }
 
-    .wd-fieldset-rows {
-        padding: 4px 0;
-    }
-
-    /* Each label/value row */
-    .wd-fieldset-card li.WLSF {
+    /* Each row: two-column grid \u2014 only outside table cells */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF:not(td *) {
         display: grid !important;
-        grid-template-columns: 180px 1fr !important;
-        align-items: baseline !important;
-        padding: 7px 14px !important;
+        grid-template-columns: minmax(140px, 40%) 1fr !important;
+        align-items: center !important;
+        padding: 8px 14px !important;
         border-bottom: 1px solid #f0f4f8 !important;
-        gap: 12px !important;
+        gap: 8px !important;
+        width: auto !important;
+        min-width: 0 !important;
     }
 
-    .wd-fieldset-card li.WLSF:last-child {
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF:not(td *):last-child {
         border-bottom: none !important;
     }
 
-    .wd-fieldset-card li.WLSF:nth-child(even) {
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF:not(td *):nth-child(even) {
         background-color: #f6f8fa !important;
     }
 
-    /* Label column */
-    .wd-fieldset-card [data-automation-id="formLabel"] {
+    /* Label cell */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF:not(td *) > :first-child {
+        display: block !important;
+        width: auto !important;
+        min-width: 0 !important;
+        position: static !important;
+    }
+
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF:not(td *) [data-automation-id="formLabel"] {
+        display: block !important;
         font-weight: 600 !important;
         color: #57606a !important;
         font-size: 12px !important;
+        letter-spacing: 0.05em !important;
+        white-space: normal !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.04em !important;
-        white-space: nowrap !important;
-        /* hide the duplicate aria-hidden ghost label Workday renders */
     }
 
-    .wd-fieldset-card .WATF[aria-hidden="true"] {
+    /* Hide the duplicate aria-hidden ghost label */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF:not(td *) [aria-hidden="true"] {
         display: none !important;
     }
 
-    /* Value column */
-    .wd-fieldset-card [data-automation-id="decorationWrapper"] {
+    /* Value cell */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF:not(td *) > [data-automation-id="decorationWrapper"] {
+        display: block !important;
+        width: auto !important;
+        min-width: 0 !important;
+        position: static !important;
         color: #1f2328 !important;
         font-size: 14px !important;
+        font-weight: 400 !important;
     }
 
-    /* Plain text values */
-    .wd-fieldset-card [data-automation-id="textView"] {
-        font-size: 14px !important;
-    }
+    // /* Dates \u2014 mono and bold */
+    // .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
+    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+    //     font-size: 13px !important;
+    //     font-weight: 600 !important;
+    // }
+
+    // /* Numbers \u2014 mono and bold */
+    // .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
+    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+    //     font-size: 13px !important;
+    //     font-weight: 600 !important;
+    // }
 
     /* Rich text prose */
-    .wd-fieldset-card [data-automation-id="richTextContent"] .ProseMirror {
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="richTextContent"] .ProseMirror {
         font-size: 13px !important;
         color: #444 !important;
         line-height: 1.5 !important;
+        font-family: inherit !important;
     }
 
-    /* Pill/moniker items \u2014 just show cleanly as comma-separated text */
-    .wd-fieldset-card [data-automation-id="selectedItemList"] {
+    /* Pill/moniker items */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="selectedItemList"] {
         list-style: none !important;
         padding: 0 !important;
         margin: 0 !important;
@@ -361,7 +469,7 @@
         gap: 6px !important;
     }
 
-    .wd-fieldset-card [data-automation-id="menuItem"] {
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="menuItem"] {
         background: #e8f0fe !important;
         border: 1px solid #c5d5f5 !important;
         border-radius: 4px !important;
@@ -369,13 +477,13 @@
         font-size: 13px !important;
     }
 
-    /* Hide related-actions (...) buttons in read-only view \u2014 they clutter things */
-    .wd-fieldset-card [data-automation-id="relatedIconContainer"] {
+    /* Hide related-actions buttons */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="relatedIconContainer"] {
         display: none !important;
     }
 
-    /* Hide rows with no label text (orphaned link rows) */
-    .wd-fieldset-card li.WLSF.wd-no-label {
+    /* Hide no-label rows */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF.wd-no-label:not(td *) {
         display: none !important;
     }
 `;
@@ -386,24 +494,54 @@
         style.textContent = styles;
         document.head.appendChild(style);
       }
+      function getFieldSetDepth(el) {
+        let depth = 0;
+        let current = el.parentElement;
+        while (current) {
+          if (current.dataset?.automationId === "fieldSetBody" || current.classList?.contains("wd-fieldset-card")) {
+            depth++;
+          }
+          current = current.parentElement;
+        }
+        return depth;
+      }
       function enhanceFieldSet(fieldSetBody) {
-        injectFieldSetStyles();
+        if (fieldSetBody.closest('[data-automation-id="tableWrapper"], [data-automation-id="row"], [data-automation-id="cell"]')) return;
         const titleEl = fieldSetBody.querySelector('[data-automation-id="fieldSetLegendLabel"]');
         const title = titleEl?.textContent.trim() ?? "";
+        if (!title) return;
+        injectFieldSetStyles();
+        const isExpanded = fieldSetBody.getAttribute("data-automation-formlabelexpanded") === "true";
+        const depth = Math.min(getFieldSetDepth(fieldSetBody), 3);
         const card = document.createElement("div");
         card.className = "wd-fieldset-card";
+        card.dataset.wdDepth = depth;
         fieldSetBody.parentElement.insertBefore(card, fieldSetBody);
         card.appendChild(fieldSetBody);
-        if (title) {
-          const titleBar = document.createElement("div");
-          titleBar.className = "wd-fieldset-title";
-          titleBar.textContent = title;
-          card.insertBefore(titleBar, card.firstChild);
-        }
+        const titleBar = document.createElement("div");
+        titleBar.className = "wd-fieldset-title" + (isExpanded ? "" : " wd-collapsed");
+        titleBar.innerHTML = `
+        <svg class="wd-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path fill-rule="nonzero" d="M3.143 8.596a.5.5 0 0 1 .002-.701l.747-.748a.493.493 0 0 1 .7-.002L12 14.556l7.406-7.41a.5.5 0 0 1 .632-.057l.069.058.748.748a.494.494 0 0 1 0 .7l-8.505 8.512a.492.492 0 0 1-.7 0Z" fill="currentColor"/>
+        </svg>
+        <span>${title}</span>
+    `;
+        card.insertBefore(titleBar, fieldSetBody);
+        titleBar.addEventListener("click", () => {
+          const wdToggle = fieldSetBody.querySelector('.WF-N[role="button"]');
+          wdToggle?.click();
+          titleBar.classList.toggle("wd-collapsed");
+        });
         fieldSetBody.querySelectorAll("li.WLSF").forEach((row) => {
           const label = row.querySelector('[data-automation-id="formLabel"]');
           if (!label?.textContent.trim()) {
             row.classList.add("wd-no-label");
+          }
+        });
+        fieldSetBody.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach((wrapper) => {
+          const text = wrapper.textContent.trim();
+          if (/\d{4}-\d{2}-\d{2}/.test(text)) {
+            wrapper.classList.add("wd-date-value");
           }
         });
       }
@@ -415,6 +553,147 @@
     }
   });
 
+  // src/enhancers/pageFields.js
+  var require_pageFields = __commonJS({
+    "src/enhancers/pageFields.js"() {
+      init_registry();
+      var styles = `
+    .wd-page-fields {
+        margin-bottom: 16px;
+        font-family: var(--cnvs-sys-font-family-default), Arial, sans-serif;
+        font-size: 14px;
+        border: 1px solid #d0d7de;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .wd-page-fields li.WLSF:not(td *) {
+        display: grid !important;
+        grid-template-columns: minmax(140px, 40%) 1fr !important;
+        align-items: center !important;
+        padding: 8px 14px !important;
+        border-bottom: 1px solid #f0f4f8 !important;
+        gap: 8px !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *):last-child {
+        border-bottom: none !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *):nth-child(even) {
+        background-color: #f6f8fa !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *) > :first-child {
+        display: block !important;
+        width: auto !important;
+        min-width: 0 !important;
+        position: static !important;
+    }
+
+    .wd-page-fields [data-automation-id="formLabel"] {
+        display: block !important;
+        font-weight: 600 !important;
+        color: #57606a !important;
+        font-size: 12px !important;
+        letter-spacing: 0.05em !important;
+        white-space: normal !important;
+        text-transform: uppercase !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *) [aria-hidden="true"] {
+        display: none !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *) > [data-automation-id="decorationWrapper"] {
+        display: block !important;
+        width: auto !important;
+        min-width: 0 !important;
+        position: static !important;
+        color: #1f2328 !important;
+        font-size: 14px !important;
+        font-weight: 400 !important;
+    }
+
+    .wd-page-fields [data-automation-id="richTextContent"] .ProseMirror {
+        font-size: 13px !important;
+        color: #444 !important;
+        line-height: 1.5 !important;
+        font-family: inherit !important;
+    }
+
+    .wd-page-fields [data-automation-id="selectedItemList"] {
+        list-style: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    .wd-page-fields [data-automation-id="menuItem"] {
+        background: #e8f0fe !important;
+        border: 1px solid #c5d5f5 !important;
+        border-radius: 4px !important;
+        padding: 2px 8px !important;
+        font-size: 13px !important;
+    }
+
+    .wd-page-fields [data-automation-id="relatedIconContainer"] {
+        display: none !important;
+    }
+
+    // .wd-page-fields .wd-date-value {
+    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+    //     font-size: 13px !important;
+    //     font-weight: 600 !important;
+    // }
+
+    .wd-page-fields li.WLSF.wd-no-label:not(td *) {
+        display: none !important;
+    }
+`;
+      function injectPageFieldStyles() {
+        if (document.getElementById("wd-page-fields-styles")) return;
+        const style = document.createElement("style");
+        style.id = "wd-page-fields-styles";
+        style.textContent = styles;
+        document.head.appendChild(style);
+      }
+      function enhancePageFields(ul) {
+        if (ul.closest('[data-automation-id="fieldSetBody"], [data-automation-id="tableWrapper"], [data-automation-id="cell"], .wd-page-fields, .wd-fieldset-card')) return;
+        const rows = ul.querySelectorAll("li.WLSF");
+        if (!rows.length) return;
+        const hasFormLabels = ul.querySelector('[data-automation-id="formLabel"]');
+        if (!hasFormLabels) return;
+        injectPageFieldStyles();
+        const wrapper = document.createElement("div");
+        wrapper.className = "wd-page-fields";
+        ul.parentElement.insertBefore(wrapper, ul);
+        wrapper.appendChild(ul);
+        rows.forEach((row) => {
+          const label = row.querySelector('[data-automation-id="formLabel"]');
+          if (!label?.textContent.trim()) {
+            row.classList.add("wd-no-label");
+          }
+        });
+        ul.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach((dw) => {
+          const text = dw.textContent.trim();
+          if (/\d{4}-\d{2}-\d{2}/.test(text)) {
+            dw.classList.add("wd-date-value");
+          }
+        });
+      }
+      registerEnhancer({
+        selector: "ul.WBUF",
+        handler: enhancePageFields,
+        key: "pageFields"
+      });
+    }
+  });
+
   // src/content.js
   var require_content = __commonJS({
     "src/content.js"() {
@@ -422,6 +701,7 @@
       var import_table = __toESM(require_table());
       var import_tableCurrentCourses = __toESM(require_tableCurrentCourses());
       var import_fieldSet = __toESM(require_fieldSet());
+      var import_pageFields = __toESM(require_pageFields());
       console.log("INFO: Prettify Workday loaded successfully.");
       startObserver();
     }
