@@ -9,6 +9,7 @@ const styles = `
         font-size: 14px;
         border: 1px solid #d0d7de;
         border-radius: 8px;
+        overflow: hidden;
     }
 
     .wd-fieldset-title {
@@ -41,9 +42,12 @@ const styles = `
     .wd-fieldset-card[data-wd-depth="3"] .wd-fieldset-title { background-color: #3182ce; }
 
     /* Depth-based indentation */
-    .wd-fieldset-card[data-wd-depth="1"] { margin-left: 12px; }
-    .wd-fieldset-card[data-wd-depth="2"] { margin-left: 24px; }
-    .wd-fieldset-card[data-wd-depth="3"] { margin-left: 36px; }
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] {
+        padding: 5px; 
+        display: flex;
+        flex-direction: column;
+        gap: 12px; /* Adds space specifically between items/nested cards inside the body */
+    }
 
     /* Hide Workday's original header row */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] > .WG-N {
@@ -86,7 +90,7 @@ const styles = `
         display: block !important;
         font-weight: 600 !important;
         color: #57606a !important;
-        font-size: 12px !important;
+        font-size: 12.35px !important;
         letter-spacing: 0.05em !important;
         white-space: normal !important;
         text-transform: uppercase !important;
@@ -124,7 +128,7 @@ const styles = `
 
     /* Rich text prose */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="richTextContent"] .ProseMirror {
-        font-size: 13px !important;
+        font-size: 13.5px !important;
         color: #444 !important;
         line-height: 1.5 !important;
         font-family: inherit !important;

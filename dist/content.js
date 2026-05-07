@@ -169,28 +169,6 @@
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="relatedIconContainer"] {
         display: none !important;
     }
-
-    // /* Date cells */
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-weight: 500 !important;
-    // }
-
-    // /* Numeric cells */
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-weight: 500 !important;
-    // }
-
-    // /* Persist styles through row selection focus */
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date:focus,
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date:focus-within,
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number:focus,
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number:focus-within {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-size: 12px !important;
-    //     font-weight: 500 !important;
-    // }
 `;
       function injectGlobalStyles() {
         if (document.getElementById("wd-enhancer-styles")) return;
@@ -338,6 +316,7 @@
         font-size: 14px;
         border: 1px solid #d0d7de;
         border-radius: 8px;
+        overflow: hidden;
     }
 
     .wd-fieldset-title {
@@ -370,9 +349,12 @@
     .wd-fieldset-card[data-wd-depth="3"] .wd-fieldset-title { background-color: #3182ce; }
 
     /* Depth-based indentation */
-    .wd-fieldset-card[data-wd-depth="1"] { margin-left: 12px; }
-    .wd-fieldset-card[data-wd-depth="2"] { margin-left: 24px; }
-    .wd-fieldset-card[data-wd-depth="3"] { margin-left: 36px; }
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] {
+        padding: 5px; 
+        display: flex;
+        flex-direction: column;
+        gap: 12px; /* Adds space specifically between items/nested cards inside the body */
+    }
 
     /* Hide Workday's original header row */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] > .WG-N {
@@ -415,7 +397,7 @@
         display: block !important;
         font-weight: 600 !important;
         color: #57606a !important;
-        font-size: 12px !important;
+        font-size: 12.35px !important;
         letter-spacing: 0.05em !important;
         white-space: normal !important;
         text-transform: uppercase !important;
@@ -453,7 +435,7 @@
 
     /* Rich text prose */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="richTextContent"] .ProseMirror {
-        font-size: 13px !important;
+        font-size: 13.5px !important;
         color: #444 !important;
         line-height: 1.5 !important;
         font-family: inherit !important;
@@ -597,7 +579,7 @@
         display: block !important;
         font-weight: 600 !important;
         color: #57606a !important;
-        font-size: 12px !important;
+        font-size: 12.35px !important;
         letter-spacing: 0.05em !important;
         white-space: normal !important;
         text-transform: uppercase !important;

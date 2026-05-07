@@ -42,7 +42,7 @@ const styles = `
         display: block !important;
         font-weight: 600 !important;
         color: #57606a !important;
-        font-size: 12px !important;
+        font-size: 12.35px !important;
         letter-spacing: 0.05em !important;
         white-space: normal !important;
         text-transform: uppercase !important;

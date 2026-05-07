@@ -101,28 +101,6 @@ const styles = `
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="relatedIconContainer"] {
         display: none !important;
     }
-
-    // /* Date cells */
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-weight: 500 !important;
-    // }
-
-    // /* Numeric cells */
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-weight: 500 !important;
-    // }
-
-    // /* Persist styles through row selection focus */
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date:focus,
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-date:focus-within,
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number:focus,
-    // .wd-table-wrapper [data-automation-id="cell"].wd-cell-number:focus-within {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-size: 12px !important;
-    //     font-weight: 500 !important;
-    // }
 `;
 
 // ─── Style injection ───────────────────────────────────────────────────────────
