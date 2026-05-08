@@ -148,6 +148,17 @@ const styles = `
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="textView"] {
         font-size: 13px !important;
     }
+
+    /* Target links inside table cells (like Course names/codes) */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="singleLineLink"] {
+        font-size: 13px !important;
+        /* Ensure it matches the rest of your text color but stays a link */
+        text-decoration: none !important; 
+    }
+
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="singleLineLink"]:hover {
+        text-decoration: underline !important;
+    }
 `;
 
 // ─── Style injection ───────────────────────────────────────────────────────────
