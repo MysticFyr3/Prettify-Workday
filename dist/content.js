@@ -203,6 +203,21 @@
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="subtotalValue"] {
         font-size: 13px !important;
     }
+
+    /* \u2500\u2500\u2500 Specialized Text Views (Numbers, Totals, and Standard Text) \u2500\u2500\u2500 */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="numericText"],
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="subtotalValue"],
+    .wd-table-wrapper [data-automation-id="cellContainer"] > div[title],
+    .wd-table-wrapper [data-automation-id="cellContainer"] > div > div[title] {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 13px !important;
+    }
+
+    /* Target standard textView elements inside table cells (like "School address") */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="textView"] {
+        font-size: 13px !important;
+        color: #1f2328 !important;
+    }
 `;
       function injectGlobalStyles() {
         if (document.getElementById("wd-enhancer-styles")) return;
@@ -389,12 +404,13 @@
       }
     });
     const DATE = /\d{4}-\d{2}-\d{2}/;
-    const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
+    const NUMBER = /^[\d,]+(\.\d+)?( of \d+)?$/;
     ul.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach((dw) => {
       const text = dw.textContent.trim();
+      const isDrillDown = dw.querySelector('[data-automation-id="drillDownNumberLabel"]');
       if (DATE.test(text)) {
         dw.classList.add("wd-date-value");
-      } else if (NUMBER.test(text)) {
+      } else if (NUMBER.test(text) || isDrillDown) {
         dw.classList.add("wd-number-value");
       }
     });
@@ -499,7 +515,13 @@
         display: none !important;
     }
 
-    .wd-page-fields .wd-date-value {
+    /* Mono logic for numbers/dates (Updated to include drillDownNumberLabel) */
+    .wd-page-fields .wd-date-value,
+    .wd-page-fields .wd-number-value,
+    .wd-page-fields .wd-date-value [data-automation-id="textView"],
+    .wd-page-fields .wd-number-value [data-automation-id="textView"],
+    .wd-page-fields li.WLSF [data-automation-id="numericText"],
+    [data-automation-id="drillDownNumberLabel"] {
         font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
         font-size: 14px !important;
         font-weight: 500 !important;
@@ -509,37 +531,16 @@
         display: none !important;
     }
 
-    /* Plain text and numeric textView elements */
+    /* Plain text rows */
     .wd-page-fields [data-automation-id="textView"] {
         font-size: 14px !important;
         color: #1f2328 !important;
     }
 
-    .wd-page-fields .wd-date-value [data-automation-id="textView"],
-    .wd-page-fields .wd-date-value {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-    }
-
-    .wd-page-fields .wd-number-value [data-automation-id="textView"],
-    .wd-page-fields .wd-number-value {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-    }
-    
     .wd-page-fields li.WLSF [data-automation-id="textView"] {
         font-size: 14px !important;
         color: #1f2328 !important;
         font-weight: 400 !important;
-    }
-
-    .wd-page-fields li.WLSF [data-automation-id="numericText"] {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        color: #1f2328 !important;
     }
 `;
       registerEnhancer({
@@ -598,7 +599,7 @@
         padding: 5px; 
         display: flex;
         flex-direction: column;
-        gap: 12px; /* Adds space specifically between items/nested cards inside the body */
+        gap: 12px;
     }
 
     /* Hide Workday's original header row */
@@ -665,14 +666,18 @@
     }
 
     /* Dates \u2014 mono */
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value,
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value [data-automation-id="textView"] {
         font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
         font-size: 14px !important;
         font-weight: 500 !important;
     }
 
-    /* Numbers \u2014 mono */
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
+    /* Numbers \u2014 mono (Updated to include drillDownNumberLabel) */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value,
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value [data-automation-id="textView"],
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF [data-automation-id="numericText"],
+    [data-automation-id="drillDownNumberLabel"] {
         font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
         font-size: 14px !important;
         font-weight: 500 !important;
@@ -714,35 +719,9 @@
         display: none !important;
     }
 
-    /* Plain text and numeric textView elements */
+    /* Plain text */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
         font-size: 14px !important;
-        color: #1f2328 !important;
-    }
-
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value [data-automation-id="textView"],
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-    }
-
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value [data-automation-id="textView"],
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-    }
-
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
-        font-size: 14px !important;
-        color: #1f2328 !important;
-    }
-
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF [data-automation-id="numericText"] {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
         color: #1f2328 !important;
     }
 `;
@@ -828,12 +807,13 @@
         });
         enhanceMeetingPatterns2(fieldSetBody);
         const DATE = /\d{4}-\d{2}-\d{2}/;
-        const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
+        const NUMBER = /^[\d,]+(\.\d+)?( of \d+)?$/;
         fieldSetBody.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach((wrapper) => {
           const text = wrapper.textContent.trim();
+          const isDrillDown = wrapper.querySelector('[data-automation-id="drillDownNumberLabel"]');
           if (DATE.test(text)) {
             wrapper.classList.add("wd-date-value");
-          } else if (NUMBER.test(text)) {
+          } else if (NUMBER.test(text) || isDrillDown) {
             wrapper.classList.add("wd-number-value");
           }
         });

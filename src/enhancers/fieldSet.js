@@ -46,7 +46,7 @@ const styles = `
         padding: 5px; 
         display: flex;
         flex-direction: column;
-        gap: 12px; /* Adds space specifically between items/nested cards inside the body */
+        gap: 12px;
     }
 
     /* Hide Workday's original header row */
@@ -113,14 +113,18 @@ const styles = `
     }
 
     /* Dates — mono */
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value,
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value [data-automation-id="textView"] {
         font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
         font-size: 14px !important;
         font-weight: 500 !important;
     }
 
-    /* Numbers — mono */
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
+    /* Numbers — mono (Updated to include drillDownNumberLabel) */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value,
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value [data-automation-id="textView"],
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF [data-automation-id="numericText"],
+    [data-automation-id="drillDownNumberLabel"] {
         font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
         font-size: 14px !important;
         font-weight: 500 !important;
@@ -162,35 +166,9 @@ const styles = `
         display: none !important;
     }
 
-    /* Plain text and numeric textView elements */
+    /* Plain text */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
         font-size: 14px !important;
-        color: #1f2328 !important;
-    }
-
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value [data-automation-id="textView"],
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-    }
-
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value [data-automation-id="textView"],
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-    }
-
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
-        font-size: 14px !important;
-        color: #1f2328 !important;
-    }
-
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF [data-automation-id="numericText"] {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
         color: #1f2328 !important;
     }
 `;
@@ -319,13 +297,15 @@ function enhanceFieldSet(fieldSetBody) {
     enhanceMeetingPatterns(fieldSetBody); // Must be before mono fonting
 
     const DATE = /\d{4}-\d{2}-\d{2}/;
-    const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
+    const NUMBER = /^[\d,]+(\.\d+)?( of \d+)?$/; 
 
     fieldSetBody.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach(wrapper => {
         const text = wrapper.textContent.trim();
+        const isDrillDown = wrapper.querySelector('[data-automation-id="drillDownNumberLabel"]');
+        
         if (DATE.test(text)) {
             wrapper.classList.add('wd-date-value');
-        } else if (NUMBER.test(text)) {
+        } else if (NUMBER.test(text) || isDrillDown) {
             wrapper.classList.add('wd-number-value');
         }
     });

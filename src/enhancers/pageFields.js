@@ -90,7 +90,13 @@ const styles = `
         display: none !important;
     }
 
-    .wd-page-fields .wd-date-value {
+    /* Mono logic for numbers/dates (Updated to include drillDownNumberLabel) */
+    .wd-page-fields .wd-date-value,
+    .wd-page-fields .wd-number-value,
+    .wd-page-fields .wd-date-value [data-automation-id="textView"],
+    .wd-page-fields .wd-number-value [data-automation-id="textView"],
+    .wd-page-fields li.WLSF [data-automation-id="numericText"],
+    [data-automation-id="drillDownNumberLabel"] {
         font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
         font-size: 14px !important;
         font-weight: 500 !important;
@@ -100,37 +106,16 @@ const styles = `
         display: none !important;
     }
 
-    /* Plain text and numeric textView elements */
+    /* Plain text rows */
     .wd-page-fields [data-automation-id="textView"] {
         font-size: 14px !important;
         color: #1f2328 !important;
     }
 
-    .wd-page-fields .wd-date-value [data-automation-id="textView"],
-    .wd-page-fields .wd-date-value {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-    }
-
-    .wd-page-fields .wd-number-value [data-automation-id="textView"],
-    .wd-page-fields .wd-number-value {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-    }
-    
     .wd-page-fields li.WLSF [data-automation-id="textView"] {
         font-size: 14px !important;
         color: #1f2328 !important;
         font-weight: 400 !important;
-    }
-
-    .wd-page-fields li.WLSF [data-automation-id="numericText"] {
-        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-        font-size: 14px !important;
-        font-weight: 500 !important;
-        color: #1f2328 !important;
     }
 `;
 
@@ -207,13 +192,15 @@ export function enhancePageFieldsList(ul) {
     });
 
     const DATE = /\d{4}-\d{2}-\d{2}/;
-    const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
+    const NUMBER = /^[\d,]+(\.\d+)?( of \d+)?$/;
 
     ul.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach(dw => {
         const text = dw.textContent.trim();
+        const isDrillDown = dw.querySelector('[data-automation-id="drillDownNumberLabel"]');
+
         if (DATE.test(text)) {
             dw.classList.add('wd-date-value');
-        } else if (NUMBER.test(text)) {
+        } else if (NUMBER.test(text) || isDrillDown) {
             dw.classList.add('wd-number-value');
         }
     });

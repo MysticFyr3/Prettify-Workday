@@ -135,6 +135,21 @@ const styles = `
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="subtotalValue"] {
         font-size: 13px !important;
     }
+
+    /* ─── Specialized Text Views (Numbers, Totals, and Standard Text) ─── */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="numericText"],
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="subtotalValue"],
+    .wd-table-wrapper [data-automation-id="cellContainer"] > div[title],
+    .wd-table-wrapper [data-automation-id="cellContainer"] > div > div[title] {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 13px !important;
+    }
+
+    /* Target standard textView elements inside table cells (like "School address") */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="textView"] {
+        font-size: 13px !important;
+        color: #1f2328 !important;
+    }
 `;
 
 // ─── Style injection ───────────────────────────────────────────────────────────
