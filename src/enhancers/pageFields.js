@@ -109,12 +109,10 @@ const styles = `
     /* Plain text rows */
     .wd-page-fields [data-automation-id="textView"] {
         font-size: 14px !important;
-        color: #1f2328 !important;
     }
 
     .wd-page-fields li.WLSF [data-automation-id="textView"] {
         font-size: 14px !important;
-        color: #1f2328 !important;
         font-weight: 400 !important;
     }
 `;

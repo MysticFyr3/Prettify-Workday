@@ -127,7 +127,6 @@ const styles = `
     /* "Total:" label text */
     .wd-table-wrapper [data-automation-id="cell"] span:has(+ [data-automation-id="subtotalValue"]) {
         font-size: 13.5px !important;
-        color: #57606a !important;
         font-weight: 500 !important;
     }
 
@@ -148,7 +147,6 @@ const styles = `
     /* Target standard textView elements inside table cells (like "School address") */
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="textView"] {
         font-size: 13px !important;
-        color: #1f2328 !important;
     }
 `;
 

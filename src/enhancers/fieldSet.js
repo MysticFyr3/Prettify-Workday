@@ -107,7 +107,6 @@ const styles = `
         width: auto !important;
         min-width: 0 !important;
         position: static !important;
-        color: #1f2328 !important;
         font-size: 13px !important;
         font-weight: 400 !important;
     }
@@ -169,7 +168,6 @@ const styles = `
     /* Plain text */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
         font-size: 14px !important;
-        color: #1f2328 !important;
     }
 `;
 
