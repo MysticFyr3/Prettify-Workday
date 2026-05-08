@@ -160,11 +160,6 @@ const styles = `
         display: none !important;
     }
 
-    /* Hide no-label rows */
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF.wd-no-label:not(td *) {
-        display: none !important;
-    }
-
     /* Plain text */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
         font-size: 14px !important;

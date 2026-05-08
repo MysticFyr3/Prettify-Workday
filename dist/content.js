@@ -536,10 +536,6 @@
         font-weight: 500 !important;
     }
 
-    .wd-page-fields li.WLSF.wd-no-label:not(td *) {
-        display: none !important;
-    }
-
     /* Plain text rows */
     .wd-page-fields [data-automation-id="textView"] {
         font-size: 14px !important;
@@ -717,11 +713,6 @@
 
     /* Hide related-actions buttons */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="relatedIconContainer"] {
-        display: none !important;
-    }
-
-    /* Hide no-label rows */
-    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF.wd-no-label:not(td *) {
         display: none !important;
     }
 
