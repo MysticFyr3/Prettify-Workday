@@ -2,7 +2,7 @@
 
 A Chromium web extension designed to transform the Workday interface into a cleaner, more readable, and professional workspace. This project focusses on improving data density and visual hierarchy in tables, fieldsets, and other common Workday structures.
 
-**NOTE**: *This extension is optimized for the UBC Workday tenant but designed to work across generic Workday instances.*
+**NOTE**: *This extension was created and optimized for the UBC Workday tenant; it may work across other Workday instances.*
 
 ## Highlighted Features
 
