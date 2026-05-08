@@ -13,7 +13,7 @@ const styles = `
     }
 
     .wd-fieldset-title {
-        font-size: 15px;
+        font-size: 16px;
         font-weight: bold;
         color: #fff;
         padding: 10px 14px;
