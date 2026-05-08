@@ -6,7 +6,7 @@ const styles = `
     .wd-table-wrapper {
         margin-bottom: 16px;
         font-family: var(--cnvs-sys-font-family-default), Arial, sans-serif;
-        font-size: 14px;
+        font-size: 13px;
         border: 1px solid #d0d7de;
         border-radius: 8px;
         overflow: hidden;
@@ -34,11 +34,14 @@ const styles = `
         background-color: #2c4f7c !important;
     }
 
+    /* Increased column title font size and weight */
     .wd-table-wrapper [data-automation-id="tableHead"] th,
     .wd-table-wrapper [data-automation-id="tableHead"] th * {
         background-color: #2c4f7c !important;
         color: #fff !important;
         border: none !important;
+        font-size: 13.5px !important;
+        font-weight: 500 !important;
     }
 
     .wd-table-wrapper [data-automation-id="row"] td {
@@ -79,7 +82,7 @@ const styles = `
         display: none !important;
     }
 
-    /* Pill/moniker values inside table cells */
+    /* ─── Pill/Moniker styling (Instructors, Course Sections) ─── */
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="selectedItemList"] {
         list-style: none !important;
         padding: 0 !important;
@@ -94,12 +97,43 @@ const styles = `
         border: 1px solid #c5d5f5 !important;
         border-radius: 4px !important;
         padding: 2px 8px !important;
+    }
+
+    /* Target the actual text inside pills (Instructor Names) */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="promptOption"] {
         font-size: 13px !important;
     }
 
     /* Hide related-actions buttons inside table cells */
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="relatedIconContainer"] {
         display: none !important;
+    }
+
+    /* ─── Specialized Text Views (Numbers, Totals) ─── */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="numericText"],
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="subtotalValue"],
+    .wd-table-wrapper [data-automation-id="cellContainer"] > div[title],
+    .wd-table-wrapper [data-automation-id="cellContainer"] > div > div[title] {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 13px !important;
+    }
+
+    /* Date textView — class on the element itself, survives td replacement */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="textView"].wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 13px !important;
+    }
+
+    /* "Total:" label text */
+    .wd-table-wrapper [data-automation-id="cell"] span:has(+ [data-automation-id="subtotalValue"]) {
+        font-size: 13.5px !important;
+        color: #57606a !important;
+        font-weight: 500 !important;
+    }
+
+    /* Subtotal value */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="subtotalValue"] {
+        font-size: 13px !important;
     }
 `;
 
@@ -153,21 +187,10 @@ const DATE = /\d{4}-\d{2}-\d{2}/;
 const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
 
 function classifyCell(cell) {
-    cell.classList.remove('wd-cell-date', 'wd-cell-number');
-
-    if (cell.querySelector([
-        '[data-automation-id="selectedItemList"]',
-        '[data-automation-id="panel"]',
-        '[data-automation-id="dropDownCommandButton"]'
-    ].join(', '))) return;
-
-    const text = cell.textContent.trim();
-    if (!text) return;
-
-    if (DATE.test(text)) {
-        cell.classList.add('wd-cell-date');
-    } else if (NUMBER.test(text)) {
-        cell.classList.add('wd-cell-number');
+    const textView = cell.querySelector('[data-automation-id="textView"]');
+    if (!textView) return;
+    if (DATE.test(textView.textContent.trim())) {
+        textView.classList.add('wd-date-value');
     }
 }
 
@@ -205,6 +228,21 @@ function enhanceTable(wrapper) {
 
     enhanceMeetingPatterns(wrapper);
     classifyTableCells(wrapper);
+
+    const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+                if (node.nodeType === 1) {
+                    const cell = node.closest?.('[data-automation-id="cell"]') ?? (node.matches?.('[data-automation-id="cell"]') ? node : null);
+                    if (cell) {
+                        console.log('[wd] cell replaced, outerHTML:', cell.outerHTML.slice(0, 200));
+                    }
+                }
+            }
+        }
+    });
+
+    observer.observe(wrapper, { childList: true, subtree: true });
 }
 
 // ─── Registration ─────────────────────────────────────────────────────────────

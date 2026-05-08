@@ -1,4 +1,5 @@
 import { registerEnhancer } from '../core/registry.js';
+import { enhancePageFieldsList } from './pageFields.js';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -9,7 +10,6 @@ const styles = `
         font-size: 14px;
         border: 1px solid #d0d7de;
         border-radius: 8px;
-        overflow: hidden;
     }
 
     .wd-fieldset-title {
@@ -90,7 +90,7 @@ const styles = `
         display: block !important;
         font-weight: 600 !important;
         color: #57606a !important;
-        font-size: 12.35px !important;
+        font-size: 12.5px !important;
         letter-spacing: 0.05em !important;
         white-space: normal !important;
         text-transform: uppercase !important;
@@ -108,27 +108,27 @@ const styles = `
         min-width: 0 !important;
         position: static !important;
         color: #1f2328 !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
         font-weight: 400 !important;
     }
 
-    // /* Dates — mono and bold */
-    // .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-size: 13px !important;
-    //     font-weight: 600 !important;
-    // }
+    /* Dates — mono */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
 
-    // /* Numbers — mono and bold */
-    // .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-size: 13px !important;
-    //     font-weight: 600 !important;
-    // }
+    /* Numbers — mono */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
 
     /* Rich text prose */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="richTextContent"] .ProseMirror {
-        font-size: 13.5px !important;
+        font-size: 14px !important;
         color: #444 !important;
         line-height: 1.5 !important;
         font-family: inherit !important;
@@ -149,7 +149,7 @@ const styles = `
         border: 1px solid #c5d5f5 !important;
         border-radius: 4px !important;
         padding: 2px 8px !important;
-        font-size: 13px !important;
+        font-size: 14px !important;
     }
 
     /* Hide related-actions buttons */
@@ -160,6 +160,38 @@ const styles = `
     /* Hide no-label rows */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF.wd-no-label:not(td *) {
         display: none !important;
+    }
+
+    /* Plain text and numeric textView elements */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
+        font-size: 14px !important;
+        color: #1f2328 !important;
+    }
+
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value [data-automation-id="textView"],
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value [data-automation-id="textView"],
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
+        font-size: 14px !important;
+        color: #1f2328 !important;
+    }
+
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF [data-automation-id="numericText"] {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #1f2328 !important;
     }
 `;
 
@@ -188,6 +220,46 @@ function getFieldSetDepth(el) {
     return depth;
 }
 
+// ─── Meeting pattern parser ────────────────────────────────────────────────────
+
+function enhanceMeetingPatterns(fieldSetBody) {
+    fieldSetBody.querySelectorAll('[data-automation-id="promptOption"]').forEach(el => {
+        const text = el.getAttribute('title') || el.textContent.trim();
+        // Match date anywhere in the string, not just at the start
+        if (!/\d{4}-\d{2}-\d{2} - \d{4}-\d{2}-\d{2}/.test(text)) return;
+        // Skip if already parsed (no pipes left)
+        if (!text.includes('|')) return;
+
+        el.textContent = parseMeetingPatternField(text);
+        el.setAttribute('title', text);
+    });
+}
+
+function parseMeetingPatternField(text) {
+    const parts = text.split('|').map(p => p.trim());
+
+    // Field format: UBCV | Building (CODE) | Floor: N | Room: NNN | Days | Time | Date
+    // Find days/time by looking for the time pattern
+    const timeIndex = parts.findIndex(p => /\d+:\d+ - \d+:\d+/.test(p));
+    if (timeIndex === -1) return text;
+
+    const days = parts[timeIndex - 1] ?? '';
+    const time = parts[timeIndex];
+
+    // Building code is in parentheses in part 1
+    const buildingMatch = parts[1]?.match(/\(([^)]+)\)/);
+    const building = buildingMatch ? buildingMatch[1] : null;
+
+    // Room is in the part that starts with 'Room:'
+    const roomPart = parts.find(p => p.startsWith('Room:'));
+    const room = roomPart ? roomPart.replace('Room:', '').trim() : null;
+
+    const location = [building, room].filter(Boolean).join(' ');
+    return location
+        ? `${days} │ ${time} │ ${location}`
+        : `${days} │ ${time}`;
+}
+
 // ─── Enhancer ─────────────────────────────────────────────────────────────────
 
 function enhanceFieldSet(fieldSetBody) {
@@ -197,7 +269,14 @@ function enhanceFieldSet(fieldSetBody) {
     // Skip unlabelled wrapper fieldSets
     const titleEl = fieldSetBody.querySelector('[data-automation-id="fieldSetLegendLabel"]');
     const title = titleEl?.textContent.trim() ?? '';
-    if (!title) return;
+    if (!title) {
+        fieldSetBody.querySelectorAll(':scope > [data-automation-id="fieldSetContent"] ul.WBUF').forEach(ul => {
+            if (ul.closest('.wd-page-fields, .wd-fieldset-card')) return;
+            if (!ul.querySelector('[data-automation-id="formLabel"]')) return;
+            enhancePageFieldsList(ul);
+        });
+        return;
+    }
 
     injectFieldSetStyles();
 
@@ -237,26 +316,19 @@ function enhanceFieldSet(fieldSetBody) {
         }
     });
 
-    // Mark date values (single date or date range)
+    enhanceMeetingPatterns(fieldSetBody); // Must be before mono fonting
+
+    const DATE = /\d{4}-\d{2}-\d{2}/;
+    const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
+
     fieldSetBody.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach(wrapper => {
         const text = wrapper.textContent.trim();
-        if (/\d{4}-\d{2}-\d{2}/.test(text)) {
+        if (DATE.test(text)) {
             wrapper.classList.add('wd-date-value');
+        } else if (NUMBER.test(text)) {
+            wrapper.classList.add('wd-number-value');
         }
     });
-
-    // Mono fonts below
-    // const DATE = /\d{4}-\d{2}-\d{2}/;
-    // const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
-
-    // fieldSetBody.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach(wrapper => {
-    //     const text = wrapper.textContent.trim();
-    //     if (DATE.test(text)) {
-    //         wrapper.classList.add('wd-date-value');
-    //     } else if (NUMBER.test(text)) {
-    //         wrapper.classList.add('wd-number-value');
-    //     }
-    // });
 }
 
 // ─── Registration ─────────────────────────────────────────────────────────────

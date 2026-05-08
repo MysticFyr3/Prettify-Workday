@@ -42,7 +42,7 @@ const styles = `
         display: block !important;
         font-weight: 600 !important;
         color: #57606a !important;
-        font-size: 12.35px !important;
+        font-size: 12.5px !important;
         letter-spacing: 0.05em !important;
         white-space: normal !important;
         text-transform: uppercase !important;
@@ -58,12 +58,12 @@ const styles = `
         min-width: 0 !important;
         position: static !important;
         color: #1f2328 !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
         font-weight: 400 !important;
     }
 
     .wd-page-fields [data-automation-id="richTextContent"] .ProseMirror {
-        font-size: 13px !important;
+        font-size: 14px !important;
         color: #444 !important;
         line-height: 1.5 !important;
         font-family: inherit !important;
@@ -83,21 +83,54 @@ const styles = `
         border: 1px solid #c5d5f5 !important;
         border-radius: 4px !important;
         padding: 2px 8px !important;
-        font-size: 13px !important;
+        font-size: 14px !important;
     }
 
     .wd-page-fields [data-automation-id="relatedIconContainer"] {
         display: none !important;
     }
 
-    // .wd-page-fields .wd-date-value {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-size: 13px !important;
-    //     font-weight: 600 !important;
-    // }
+    .wd-page-fields .wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
 
     .wd-page-fields li.WLSF.wd-no-label:not(td *) {
         display: none !important;
+    }
+
+    /* Plain text and numeric textView elements */
+    .wd-page-fields [data-automation-id="textView"] {
+        font-size: 14px !important;
+        color: #1f2328 !important;
+    }
+
+    .wd-page-fields .wd-date-value [data-automation-id="textView"],
+    .wd-page-fields .wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+
+    .wd-page-fields .wd-number-value [data-automation-id="textView"],
+    .wd-page-fields .wd-number-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+    
+    .wd-page-fields li.WLSF [data-automation-id="textView"] {
+        font-size: 14px !important;
+        color: #1f2328 !important;
+        font-weight: 400 !important;
+    }
+
+    .wd-page-fields li.WLSF [data-automation-id="numericText"] {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #1f2328 !important;
     }
 `;
 
@@ -111,27 +144,61 @@ function injectPageFieldStyles() {
     document.head.appendChild(style);
 }
 
+// ─── Meeting pattern parser ────────────────────────────────────────────────────
+
+function enhanceMeetingPatterns(fieldSetBody) {
+    fieldSetBody.querySelectorAll('[data-automation-id="promptOption"]').forEach(el => {
+        const text = el.getAttribute('title') || el.textContent.trim();
+        // Match date anywhere in the string, not just at the start
+        if (!/\d{4}-\d{2}-\d{2} - \d{4}-\d{2}-\d{2}/.test(text)) return;
+        // Skip if already parsed (no pipes left)
+        if (!text.includes('|')) return;
+
+        el.textContent = parseMeetingPatternField(text);
+        el.setAttribute('title', text);
+    });
+}
+
+function parseMeetingPatternField(text) {
+    const parts = text.split('|').map(p => p.trim());
+
+    // Field format: UBCV | Building (CODE) | Floor: N | Room: NNN | Days | Time | Date
+    // Find days/time by looking for the time pattern
+    const timeIndex = parts.findIndex(p => /\d+:\d+ - \d+:\d+/.test(p));
+    if (timeIndex === -1) return text;
+
+    const days = parts[timeIndex - 1] ?? '';
+    const time = parts[timeIndex];
+
+    // Building code is in parentheses in part 1
+    const buildingMatch = parts[1]?.match(/\(([^)]+)\)/);
+    const building = buildingMatch ? buildingMatch[1] : null;
+
+    // Room is in the part that starts with 'Room:'
+    const roomPart = parts.find(p => p.startsWith('Room:'));
+    const room = roomPart ? roomPart.replace('Room:', '').trim() : null;
+
+    const location = [building, room].filter(Boolean).join(' ');
+    return location
+        ? `${days} │ ${time} │ ${location}`
+        : `${days} │ ${time}`;
+}
+
 // ─── Enhancer ─────────────────────────────────────────────────────────────────
 
-function enhancePageFields(ul) {
-    // Skip if inside a fieldSetBody, table, or already wrapped
-    if (ul.closest('[data-automation-id="fieldSetBody"], [data-automation-id="tableWrapper"], [data-automation-id="cell"], .wd-page-fields, .wd-fieldset-card')) return;
+export function enhancePageFieldsList(ul) {
+    injectPageFieldStyles();
 
-    // Only process if it actually contains WLSF field rows with formLabels
     const rows = ul.querySelectorAll('li.WLSF');
     if (!rows.length) return;
-
-    const hasFormLabels = ul.querySelector('[data-automation-id="formLabel"]');
-    if (!hasFormLabels) return;
-
-    injectPageFieldStyles();
 
     const wrapper = document.createElement('div');
     wrapper.className = 'wd-page-fields';
     ul.parentElement.insertBefore(wrapper, ul);
     wrapper.appendChild(ul);
 
-    // Mark no-label rows
+    enhanceMeetingPatterns(ul);  // ← was fieldSetBody, should be ul
+
     rows.forEach(row => {
         const label = row.querySelector('[data-automation-id="formLabel"]');
         if (!label?.textContent.trim()) {
@@ -139,13 +206,29 @@ function enhancePageFields(ul) {
         }
     });
 
-    // Mark date values
+    const DATE = /\d{4}-\d{2}-\d{2}/;
+    const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
+
     ul.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach(dw => {
         const text = dw.textContent.trim();
-        if (/\d{4}-\d{2}-\d{2}/.test(text)) {
+        if (DATE.test(text)) {
             dw.classList.add('wd-date-value');
+        } else if (NUMBER.test(text)) {
+            dw.classList.add('wd-number-value');
         }
     });
+}
+
+function enhancePageFields(ul) {
+    if (ul.closest('[data-automation-id="fieldSetBody"], [data-automation-id="tableWrapper"], [data-automation-id="cell"], .wd-page-fields, .wd-fieldset-card')) return;
+
+    const rows = ul.querySelectorAll('li.WLSF');
+    if (!rows.length) return;
+
+    const hasFormLabels = ul.querySelector('[data-automation-id="formLabel"]');
+    if (!hasFormLabels) return;
+
+    enhancePageFieldsList(ul);
 }
 
 // ─── Registration ─────────────────────────────────────────────────────────────

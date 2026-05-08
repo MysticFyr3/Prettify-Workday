@@ -70,11 +70,11 @@
   var require_table = __commonJS({
     "src/enhancers/table.js"() {
       init_registry();
-      var styles = `
+      var styles2 = `
     .wd-table-wrapper {
         margin-bottom: 16px;
         font-family: var(--cnvs-sys-font-family-default), Arial, sans-serif;
-        font-size: 14px;
+        font-size: 13px;
         border: 1px solid #d0d7de;
         border-radius: 8px;
         overflow: hidden;
@@ -102,11 +102,14 @@
         background-color: #2c4f7c !important;
     }
 
+    /* Increased column title font size and weight */
     .wd-table-wrapper [data-automation-id="tableHead"] th,
     .wd-table-wrapper [data-automation-id="tableHead"] th * {
         background-color: #2c4f7c !important;
         color: #fff !important;
         border: none !important;
+        font-size: 13.5px !important;
+        font-weight: 500 !important;
     }
 
     .wd-table-wrapper [data-automation-id="row"] td {
@@ -147,7 +150,7 @@
         display: none !important;
     }
 
-    /* Pill/moniker values inside table cells */
+    /* \u2500\u2500\u2500 Pill/Moniker styling (Instructors, Course Sections) \u2500\u2500\u2500 */
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="selectedItemList"] {
         list-style: none !important;
         padding: 0 !important;
@@ -162,6 +165,10 @@
         border: 1px solid #c5d5f5 !important;
         border-radius: 4px !important;
         padding: 2px 8px !important;
+    }
+
+    /* Target the actual text inside pills (Instructor Names) */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="promptOption"] {
         font-size: 13px !important;
     }
 
@@ -169,12 +176,39 @@
     .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="relatedIconContainer"] {
         display: none !important;
     }
+
+    /* \u2500\u2500\u2500 Specialized Text Views (Numbers, Totals) \u2500\u2500\u2500 */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="numericText"],
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="subtotalValue"],
+    .wd-table-wrapper [data-automation-id="cellContainer"] > div[title],
+    .wd-table-wrapper [data-automation-id="cellContainer"] > div > div[title] {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 13px !important;
+    }
+
+    /* Date textView \u2014 class on the element itself, survives td replacement */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="textView"].wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 13px !important;
+    }
+
+    /* "Total:" label text */
+    .wd-table-wrapper [data-automation-id="cell"] span:has(+ [data-automation-id="subtotalValue"]) {
+        font-size: 13.5px !important;
+        color: #57606a !important;
+        font-weight: 500 !important;
+    }
+
+    /* Subtotal value */
+    .wd-table-wrapper [data-automation-id="cell"] [data-automation-id="subtotalValue"] {
+        font-size: 13px !important;
+    }
 `;
       function injectGlobalStyles() {
         if (document.getElementById("wd-enhancer-styles")) return;
         const style = document.createElement("style");
         style.id = "wd-enhancer-styles";
-        style.textContent = styles;
+        style.textContent = styles2;
         document.head.appendChild(style);
       }
       function parseMeetingPattern(text) {
@@ -190,7 +224,7 @@
         const location = [building, room].filter(Boolean).join(" ");
         return location ? `${days} \u2502 ${time} \u2502 ${location}` : `${days} \u2502 ${time}`;
       }
-      function enhanceMeetingPatterns(wrapper) {
+      function enhanceMeetingPatterns2(wrapper) {
         wrapper.querySelectorAll('[data-automation-id="promptOption"]').forEach((el) => {
           const text = el.getAttribute("title") || el.textContent.trim();
           if (!/^\d{4}-\d{2}-\d{2} - \d{4}-\d{2}-\d{2}/.test(text)) return;
@@ -199,20 +233,11 @@
         });
       }
       var DATE = /\d{4}-\d{2}-\d{2}/;
-      var NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
       function classifyCell(cell) {
-        cell.classList.remove("wd-cell-date", "wd-cell-number");
-        if (cell.querySelector([
-          '[data-automation-id="selectedItemList"]',
-          '[data-automation-id="panel"]',
-          '[data-automation-id="dropDownCommandButton"]'
-        ].join(", "))) return;
-        const text = cell.textContent.trim();
-        if (!text) return;
-        if (DATE.test(text)) {
-          cell.classList.add("wd-cell-date");
-        } else if (NUMBER.test(text)) {
-          cell.classList.add("wd-cell-number");
+        const textView = cell.querySelector('[data-automation-id="textView"]');
+        if (!textView) return;
+        if (DATE.test(textView.textContent.trim())) {
+          textView.classList.add("wd-date-value");
         }
       }
       function classifyTableCells(wrapper) {
@@ -238,8 +263,21 @@
           titleBar.textContent = title;
           container.insertBefore(titleBar, container.firstChild);
         }
-        enhanceMeetingPatterns(wrapper);
+        enhanceMeetingPatterns2(wrapper);
         classifyTableCells(wrapper);
+        const observer = new MutationObserver((mutations) => {
+          for (const mutation of mutations) {
+            for (const node of mutation.addedNodes) {
+              if (node.nodeType === 1) {
+                const cell = node.closest?.('[data-automation-id="cell"]') ?? (node.matches?.('[data-automation-id="cell"]') ? node : null);
+                if (cell) {
+                  console.log("[wd] cell replaced, outerHTML:", cell.outerHTML.slice(0, 200));
+                }
+              }
+            }
+          }
+        });
+        observer.observe(wrapper, { childList: true, subtree: true });
       }
       registerEnhancer({
         selector: '[data-automation-id="tableWrapper"]',
@@ -305,18 +343,225 @@
     }
   });
 
-  // src/enhancers/fieldSet.js
-  var require_fieldSet = __commonJS({
-    "src/enhancers/fieldSet.js"() {
+  // src/enhancers/pageFields.js
+  function injectPageFieldStyles() {
+    if (document.getElementById("wd-page-fields-styles")) return;
+    const style = document.createElement("style");
+    style.id = "wd-page-fields-styles";
+    style.textContent = styles;
+    document.head.appendChild(style);
+  }
+  function enhanceMeetingPatterns(fieldSetBody) {
+    fieldSetBody.querySelectorAll('[data-automation-id="promptOption"]').forEach((el) => {
+      const text = el.getAttribute("title") || el.textContent.trim();
+      if (!/\d{4}-\d{2}-\d{2} - \d{4}-\d{2}-\d{2}/.test(text)) return;
+      if (!text.includes("|")) return;
+      el.textContent = parseMeetingPatternField(text);
+      el.setAttribute("title", text);
+    });
+  }
+  function parseMeetingPatternField(text) {
+    const parts = text.split("|").map((p) => p.trim());
+    const timeIndex = parts.findIndex((p) => /\d+:\d+ - \d+:\d+/.test(p));
+    if (timeIndex === -1) return text;
+    const days = parts[timeIndex - 1] ?? "";
+    const time = parts[timeIndex];
+    const buildingMatch = parts[1]?.match(/\(([^)]+)\)/);
+    const building = buildingMatch ? buildingMatch[1] : null;
+    const roomPart = parts.find((p) => p.startsWith("Room:"));
+    const room = roomPart ? roomPart.replace("Room:", "").trim() : null;
+    const location = [building, room].filter(Boolean).join(" ");
+    return location ? `${days} \u2502 ${time} \u2502 ${location}` : `${days} \u2502 ${time}`;
+  }
+  function enhancePageFieldsList(ul) {
+    injectPageFieldStyles();
+    const rows = ul.querySelectorAll("li.WLSF");
+    if (!rows.length) return;
+    const wrapper = document.createElement("div");
+    wrapper.className = "wd-page-fields";
+    ul.parentElement.insertBefore(wrapper, ul);
+    wrapper.appendChild(ul);
+    enhanceMeetingPatterns(ul);
+    rows.forEach((row) => {
+      const label = row.querySelector('[data-automation-id="formLabel"]');
+      if (!label?.textContent.trim()) {
+        row.classList.add("wd-no-label");
+      }
+    });
+    const DATE = /\d{4}-\d{2}-\d{2}/;
+    const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
+    ul.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach((dw) => {
+      const text = dw.textContent.trim();
+      if (DATE.test(text)) {
+        dw.classList.add("wd-date-value");
+      } else if (NUMBER.test(text)) {
+        dw.classList.add("wd-number-value");
+      }
+    });
+  }
+  function enhancePageFields(ul) {
+    if (ul.closest('[data-automation-id="fieldSetBody"], [data-automation-id="tableWrapper"], [data-automation-id="cell"], .wd-page-fields, .wd-fieldset-card')) return;
+    const rows = ul.querySelectorAll("li.WLSF");
+    if (!rows.length) return;
+    const hasFormLabels = ul.querySelector('[data-automation-id="formLabel"]');
+    if (!hasFormLabels) return;
+    enhancePageFieldsList(ul);
+  }
+  var styles;
+  var init_pageFields = __esm({
+    "src/enhancers/pageFields.js"() {
       init_registry();
-      var styles = `
-    .wd-fieldset-card {
+      styles = `
+    .wd-page-fields {
         margin-bottom: 16px;
         font-family: var(--cnvs-sys-font-family-default), Arial, sans-serif;
         font-size: 14px;
         border: 1px solid #d0d7de;
         border-radius: 8px;
         overflow: hidden;
+    }
+
+    .wd-page-fields li.WLSF:not(td *) {
+        display: grid !important;
+        grid-template-columns: minmax(140px, 40%) 1fr !important;
+        align-items: center !important;
+        padding: 8px 14px !important;
+        border-bottom: 1px solid #f0f4f8 !important;
+        gap: 8px !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *):last-child {
+        border-bottom: none !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *):nth-child(even) {
+        background-color: #f6f8fa !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *) > :first-child {
+        display: block !important;
+        width: auto !important;
+        min-width: 0 !important;
+        position: static !important;
+    }
+
+    .wd-page-fields [data-automation-id="formLabel"] {
+        display: block !important;
+        font-weight: 600 !important;
+        color: #57606a !important;
+        font-size: 12.5px !important;
+        letter-spacing: 0.05em !important;
+        white-space: normal !important;
+        text-transform: uppercase !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *) [aria-hidden="true"] {
+        display: none !important;
+    }
+
+    .wd-page-fields li.WLSF:not(td *) > [data-automation-id="decorationWrapper"] {
+        display: block !important;
+        width: auto !important;
+        min-width: 0 !important;
+        position: static !important;
+        color: #1f2328 !important;
+        font-size: 13px !important;
+        font-weight: 400 !important;
+    }
+
+    .wd-page-fields [data-automation-id="richTextContent"] .ProseMirror {
+        font-size: 14px !important;
+        color: #444 !important;
+        line-height: 1.5 !important;
+        font-family: inherit !important;
+    }
+
+    .wd-page-fields [data-automation-id="selectedItemList"] {
+        list-style: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+
+    .wd-page-fields [data-automation-id="menuItem"] {
+        background: #e8f0fe !important;
+        border: 1px solid #c5d5f5 !important;
+        border-radius: 4px !important;
+        padding: 2px 8px !important;
+        font-size: 14px !important;
+    }
+
+    .wd-page-fields [data-automation-id="relatedIconContainer"] {
+        display: none !important;
+    }
+
+    .wd-page-fields .wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+
+    .wd-page-fields li.WLSF.wd-no-label:not(td *) {
+        display: none !important;
+    }
+
+    /* Plain text and numeric textView elements */
+    .wd-page-fields [data-automation-id="textView"] {
+        font-size: 14px !important;
+        color: #1f2328 !important;
+    }
+
+    .wd-page-fields .wd-date-value [data-automation-id="textView"],
+    .wd-page-fields .wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+
+    .wd-page-fields .wd-number-value [data-automation-id="textView"],
+    .wd-page-fields .wd-number-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+    
+    .wd-page-fields li.WLSF [data-automation-id="textView"] {
+        font-size: 14px !important;
+        color: #1f2328 !important;
+        font-weight: 400 !important;
+    }
+
+    .wd-page-fields li.WLSF [data-automation-id="numericText"] {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #1f2328 !important;
+    }
+`;
+      registerEnhancer({
+        selector: "ul.WBUF",
+        handler: enhancePageFields,
+        key: "pageFields"
+      });
+    }
+  });
+
+  // src/enhancers/fieldSet.js
+  var require_fieldSet = __commonJS({
+    "src/enhancers/fieldSet.js"() {
+      init_registry();
+      init_pageFields();
+      var styles2 = `
+    .wd-fieldset-card {
+        margin-bottom: 16px;
+        font-family: var(--cnvs-sys-font-family-default), Arial, sans-serif;
+        font-size: 14px;
+        border: 1px solid #d0d7de;
+        border-radius: 8px;
     }
 
     .wd-fieldset-title {
@@ -397,7 +642,7 @@
         display: block !important;
         font-weight: 600 !important;
         color: #57606a !important;
-        font-size: 12.35px !important;
+        font-size: 12.5px !important;
         letter-spacing: 0.05em !important;
         white-space: normal !important;
         text-transform: uppercase !important;
@@ -415,27 +660,27 @@
         min-width: 0 !important;
         position: static !important;
         color: #1f2328 !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
         font-weight: 400 !important;
     }
 
-    // /* Dates \u2014 mono and bold */
-    // .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-size: 13px !important;
-    //     font-weight: 600 !important;
-    // }
+    /* Dates \u2014 mono */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
 
-    // /* Numbers \u2014 mono and bold */
-    // .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-size: 13px !important;
-    //     font-weight: 600 !important;
-    // }
+    /* Numbers \u2014 mono */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
 
     /* Rich text prose */
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="richTextContent"] .ProseMirror {
-        font-size: 13.5px !important;
+        font-size: 14px !important;
         color: #444 !important;
         line-height: 1.5 !important;
         font-family: inherit !important;
@@ -456,7 +701,7 @@
         border: 1px solid #c5d5f5 !important;
         border-radius: 4px !important;
         padding: 2px 8px !important;
-        font-size: 13px !important;
+        font-size: 14px !important;
     }
 
     /* Hide related-actions buttons */
@@ -468,12 +713,44 @@
     .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF.wd-no-label:not(td *) {
         display: none !important;
     }
+
+    /* Plain text and numeric textView elements */
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
+        font-size: 14px !important;
+        color: #1f2328 !important;
+    }
+
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value [data-automation-id="textView"],
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-date-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value [data-automation-id="textView"],
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] .wd-number-value {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+    }
+
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] [data-automation-id="textView"] {
+        font-size: 14px !important;
+        color: #1f2328 !important;
+    }
+
+    .wd-fieldset-card > [data-automation-id="fieldSetBody"] li.WLSF [data-automation-id="numericText"] {
+        font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        color: #1f2328 !important;
+    }
 `;
       function injectFieldSetStyles() {
         if (document.getElementById("wd-fieldset-styles")) return;
         const style = document.createElement("style");
         style.id = "wd-fieldset-styles";
-        style.textContent = styles;
+        style.textContent = styles2;
         document.head.appendChild(style);
       }
       function getFieldSetDepth(el) {
@@ -487,11 +764,40 @@
         }
         return depth;
       }
+      function enhanceMeetingPatterns2(fieldSetBody) {
+        fieldSetBody.querySelectorAll('[data-automation-id="promptOption"]').forEach((el) => {
+          const text = el.getAttribute("title") || el.textContent.trim();
+          if (!/\d{4}-\d{2}-\d{2} - \d{4}-\d{2}-\d{2}/.test(text)) return;
+          if (!text.includes("|")) return;
+          el.textContent = parseMeetingPatternField2(text);
+          el.setAttribute("title", text);
+        });
+      }
+      function parseMeetingPatternField2(text) {
+        const parts = text.split("|").map((p) => p.trim());
+        const timeIndex = parts.findIndex((p) => /\d+:\d+ - \d+:\d+/.test(p));
+        if (timeIndex === -1) return text;
+        const days = parts[timeIndex - 1] ?? "";
+        const time = parts[timeIndex];
+        const buildingMatch = parts[1]?.match(/\(([^)]+)\)/);
+        const building = buildingMatch ? buildingMatch[1] : null;
+        const roomPart = parts.find((p) => p.startsWith("Room:"));
+        const room = roomPart ? roomPart.replace("Room:", "").trim() : null;
+        const location = [building, room].filter(Boolean).join(" ");
+        return location ? `${days} \u2502 ${time} \u2502 ${location}` : `${days} \u2502 ${time}`;
+      }
       function enhanceFieldSet(fieldSetBody) {
         if (fieldSetBody.closest('[data-automation-id="tableWrapper"], [data-automation-id="row"], [data-automation-id="cell"]')) return;
         const titleEl = fieldSetBody.querySelector('[data-automation-id="fieldSetLegendLabel"]');
         const title = titleEl?.textContent.trim() ?? "";
-        if (!title) return;
+        if (!title) {
+          fieldSetBody.querySelectorAll(':scope > [data-automation-id="fieldSetContent"] ul.WBUF').forEach((ul) => {
+            if (ul.closest(".wd-page-fields, .wd-fieldset-card")) return;
+            if (!ul.querySelector('[data-automation-id="formLabel"]')) return;
+            enhancePageFieldsList(ul);
+          });
+          return;
+        }
         injectFieldSetStyles();
         const isExpanded = fieldSetBody.getAttribute("data-automation-formlabelexpanded") === "true";
         const depth = Math.min(getFieldSetDepth(fieldSetBody), 3);
@@ -520,10 +826,15 @@
             row.classList.add("wd-no-label");
           }
         });
+        enhanceMeetingPatterns2(fieldSetBody);
+        const DATE = /\d{4}-\d{2}-\d{2}/;
+        const NUMBER = /^\d+(\.\d+)?( of \d+)?$/;
         fieldSetBody.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach((wrapper) => {
           const text = wrapper.textContent.trim();
-          if (/\d{4}-\d{2}-\d{2}/.test(text)) {
+          if (DATE.test(text)) {
             wrapper.classList.add("wd-date-value");
+          } else if (NUMBER.test(text)) {
+            wrapper.classList.add("wd-number-value");
           }
         });
       }
@@ -535,147 +846,6 @@
     }
   });
 
-  // src/enhancers/pageFields.js
-  var require_pageFields = __commonJS({
-    "src/enhancers/pageFields.js"() {
-      init_registry();
-      var styles = `
-    .wd-page-fields {
-        margin-bottom: 16px;
-        font-family: var(--cnvs-sys-font-family-default), Arial, sans-serif;
-        font-size: 14px;
-        border: 1px solid #d0d7de;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-
-    .wd-page-fields li.WLSF:not(td *) {
-        display: grid !important;
-        grid-template-columns: minmax(140px, 40%) 1fr !important;
-        align-items: center !important;
-        padding: 8px 14px !important;
-        border-bottom: 1px solid #f0f4f8 !important;
-        gap: 8px !important;
-        width: auto !important;
-        min-width: 0 !important;
-    }
-
-    .wd-page-fields li.WLSF:not(td *):last-child {
-        border-bottom: none !important;
-    }
-
-    .wd-page-fields li.WLSF:not(td *):nth-child(even) {
-        background-color: #f6f8fa !important;
-    }
-
-    .wd-page-fields li.WLSF:not(td *) > :first-child {
-        display: block !important;
-        width: auto !important;
-        min-width: 0 !important;
-        position: static !important;
-    }
-
-    .wd-page-fields [data-automation-id="formLabel"] {
-        display: block !important;
-        font-weight: 600 !important;
-        color: #57606a !important;
-        font-size: 12.35px !important;
-        letter-spacing: 0.05em !important;
-        white-space: normal !important;
-        text-transform: uppercase !important;
-    }
-
-    .wd-page-fields li.WLSF:not(td *) [aria-hidden="true"] {
-        display: none !important;
-    }
-
-    .wd-page-fields li.WLSF:not(td *) > [data-automation-id="decorationWrapper"] {
-        display: block !important;
-        width: auto !important;
-        min-width: 0 !important;
-        position: static !important;
-        color: #1f2328 !important;
-        font-size: 14px !important;
-        font-weight: 400 !important;
-    }
-
-    .wd-page-fields [data-automation-id="richTextContent"] .ProseMirror {
-        font-size: 13px !important;
-        color: #444 !important;
-        line-height: 1.5 !important;
-        font-family: inherit !important;
-    }
-
-    .wd-page-fields [data-automation-id="selectedItemList"] {
-        list-style: none !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        display: flex !important;
-        flex-wrap: wrap !important;
-        gap: 6px !important;
-    }
-
-    .wd-page-fields [data-automation-id="menuItem"] {
-        background: #e8f0fe !important;
-        border: 1px solid #c5d5f5 !important;
-        border-radius: 4px !important;
-        padding: 2px 8px !important;
-        font-size: 13px !important;
-    }
-
-    .wd-page-fields [data-automation-id="relatedIconContainer"] {
-        display: none !important;
-    }
-
-    // .wd-page-fields .wd-date-value {
-    //     font-family: 'Roboto Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', monospace !important;
-    //     font-size: 13px !important;
-    //     font-weight: 600 !important;
-    // }
-
-    .wd-page-fields li.WLSF.wd-no-label:not(td *) {
-        display: none !important;
-    }
-`;
-      function injectPageFieldStyles() {
-        if (document.getElementById("wd-page-fields-styles")) return;
-        const style = document.createElement("style");
-        style.id = "wd-page-fields-styles";
-        style.textContent = styles;
-        document.head.appendChild(style);
-      }
-      function enhancePageFields(ul) {
-        if (ul.closest('[data-automation-id="fieldSetBody"], [data-automation-id="tableWrapper"], [data-automation-id="cell"], .wd-page-fields, .wd-fieldset-card')) return;
-        const rows = ul.querySelectorAll("li.WLSF");
-        if (!rows.length) return;
-        const hasFormLabels = ul.querySelector('[data-automation-id="formLabel"]');
-        if (!hasFormLabels) return;
-        injectPageFieldStyles();
-        const wrapper = document.createElement("div");
-        wrapper.className = "wd-page-fields";
-        ul.parentElement.insertBefore(wrapper, ul);
-        wrapper.appendChild(ul);
-        rows.forEach((row) => {
-          const label = row.querySelector('[data-automation-id="formLabel"]');
-          if (!label?.textContent.trim()) {
-            row.classList.add("wd-no-label");
-          }
-        });
-        ul.querySelectorAll('[data-automation-id="decorationWrapper"]').forEach((dw) => {
-          const text = dw.textContent.trim();
-          if (/\d{4}-\d{2}-\d{2}/.test(text)) {
-            dw.classList.add("wd-date-value");
-          }
-        });
-      }
-      registerEnhancer({
-        selector: "ul.WBUF",
-        handler: enhancePageFields,
-        key: "pageFields"
-      });
-    }
-  });
-
   // src/content.js
   var require_content = __commonJS({
     "src/content.js"() {
@@ -683,7 +853,7 @@
       var import_table = __toESM(require_table());
       var import_tableCurrentCourses = __toESM(require_tableCurrentCourses());
       var import_fieldSet = __toESM(require_fieldSet());
-      var import_pageFields = __toESM(require_pageFields());
+      init_pageFields();
       console.log("INFO: Prettify Workday loaded successfully.");
       startObserver();
     }
